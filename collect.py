@@ -21,7 +21,6 @@ s.login(f"{maint}.{namespace}", getpass.getuser(), password)
 
 makedirs(f"{namespace}/{maint}")
 print(f"getting data from {maint}.{namespace}")
-print("***")
 s.sendline('cat /etc/security/access.conf')
 s.prompt(timeout=1)
 access_conf = s.before.decode()
