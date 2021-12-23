@@ -1,0 +1,27 @@
+name: OWASP Zap DAST Full Scan
+
+on: [push]
+
+jobs:
+  zap_full_scan:
+    runs-on: self-hosted
+    timeout-minutes: 10080
+    name: OWASP ZAP DAST full scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      # - name: spinning up DVWA docker instance
+      #   run: docker run -d -it --rm --name vuln_app -p 8080:80 santosomar/vuln_app:latest
+
+      - name: ZAP Scan
+        uses: zaproxy/action-full-scan@v0.3.0
+        with:
+          token: ${{ secrets.TEST_PAT }}
+          docker_name: 'owasp/zap2docker-stable'
+          target: 'https://dx-middleware.lb.qa-bluebox.cnco.tucows.systems/'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+

@@ -1,0 +1,41 @@
+name: docker scanner script
+
+on: [push]
+
+jobs:
+  grype:
+    name: sample grype workflow
+    runs-on: self-hosted
+    
+    steps:
+      - name: Log into Tucows Github
+        run: echo ${{ secrets.TEST_PAT }} | docker login ghcr.io -u igurvich-tc --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Scan image 
+        uses: anchore/scan-action@v3
+        id: scan
+        with:
+          image: "ghcr.io/tucowsinc/ssvc-continuum/turbine:v0.19.5"
+          fail-build: false
+          acs-report-enable: true
+          debug: true
+        
+      - name: upload Anchore scan SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: fail condition check
+      # use the fail build option to fail the job if a vulnerability at the severity cutover is found. I know it's not the most elegant solution.
+        uses: anchore/scan-action@v3
+        with:
+          image: "ghcr.io/tucowsinc/ssvc-continuum/turbine:v0.19.5"
+          fail-build: true
+          severity-cutoff: high
+
+
+      # - name: Inspect action SARIF report
+      #   run: cat ${{ steps.scan.outputs.sarif }}    
