@@ -1,0 +1,77 @@
+name: sonarqube script 
+
+on:
+  push:
+    branches:    
+      # Push events on main branch
+      - main
+
+jobs:
+  test-workflow:
+    name: sample sonar workflow
+    runs-on: [self-hosted, secops]
+
+    steps:
+      - name: Checkout repo code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+
+        # this needs the PAT that is added and not the default token       
+      - name: checkout cicd-actions
+        uses: actions/checkout@v2
+        with:
+          repository: tucowsinc/cicd-actions
+          path: cicd-actions
+          token: ${{ secrets.TEST_PAT }}
+
+
+        #this does the actual config management stuff
+      - name: run sonarqube-config action
+        uses: ./cicd-actions/actions/sonar/config/push
+        if:  github.event_name == 'push'
+
+      - name: run sonarqube-config-pr action
+        uses: ./cicd-actions/actions/sonar/config/pr
+        if:  github.event_name == 'pull_request'
+        
+      #   ##only use this if you have a javascript coverage file
+      # - name: add javascript coverage report to sonar config
+      #   run: echo "sonar.javascript.lcov.reportPaths=${JAVASCRIPT_COVERAGE_LOCATION}" >> sonar-project.properties
+      #   env:
+      #     JAVASCRIPT_COVERAGE_LOCATION: <INSERT YOUR FILE PATH HERE>
+
+      # Logs into Nexus repo manager and pulls the scanner image
+        
+      - name: Log into Tucows Nexus repo manager
+        run: docker login docker.dev.tucows.net:5001 --username jenkins_docker --password ${{ secrets.JENKINS_DOCKER_NEXUS_LOGIN }}
+        
+      - name: Pull Scanner Image
+        run: docker pull docker.dev.tucows.net:5001/tucowsinc/cicd-actions/sonar-scanner-cli:4-3.2
+        
+        #this needs to be split into 2 commands due to lack of github-actions features right now
+      - name: run sonarqube-runner action
+        uses: ./cicd-actions/actions/sonar/scanner
+
+
+        #this action gets the quality gate status, as well as conditions that failed
+      - name: run sonarqube-QG action
+        uses: ./cicd-actions/actions/sonar/quality_gate
+
+      - name: display Quality Gate status
+        run: echo "Quality Gate status is $QG_STATUS"
+
+        # this step is only if you want to fail the build on a failed quality gate
+      - name: if error, display problem conditions and exit
+        if: env.QG_STATUS != 'OK' 
+        run:  |
+          echo "failing conditions are: "
+          cat .github/sonar_qg_error.json
+          exit 1
+
+
+
+
+
+
