@@ -9,7 +9,7 @@ on:
 jobs:
   test-workflow:
     name: sample sonar workflow
-    runs-on: [self-hosted, secops]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repo code

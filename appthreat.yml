@@ -5,7 +5,7 @@ on: push
 jobs:
   appthreat:
     name: appthreat scan
-    runs-on:  [self-hosted, secops]
+    runs-on:  self-hosted
 
     steps:
       - uses: AppThreat/sast-scan-action@master
