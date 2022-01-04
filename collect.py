@@ -11,6 +11,7 @@ import crypt
 from hashlib import pbkdf2_hmac
 import requests
 
+
 def vulnerable_test_function1():
     filename = tempfile.mktemp() # Noncompliant
     tmp_file = open('testfile.txt', "w+")
